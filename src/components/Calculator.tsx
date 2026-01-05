@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, X, Upload } from 'lucide-react';
 import { cn, formatCurrency } from '../lib/utils';
+import { I18nProvider, useTranslation } from '../i18n';
+import LanguageToggle from './LanguageToggle';
 import type { Contact } from '../lib/supabase';
 import { getContacts, createRecord, updateRecord, storageFrom, getRecord, getFileUrl } from '../lib/pocketbase';
 import { ItemSelection, SelectedItem } from './ItemSelection';
@@ -11,6 +13,18 @@ const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const ALLOWED_FILE_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
 
 export function Calculator() {
+  const variantClasses = {
+    number: "bg-gradient-to-b from-gray-50 to-gray-100 hover:from-white hover:to-gray-50 text-gray-800 shadow-sm",
+    operator: "bg-gradient-to-b from-gray-300 to-gray-400 hover:from-gray-200 hover:to-gray-300 text-gray-800 shadow-sm",
+    equals: "bg-gradient-to-b from-orange-400 to-orange-500 hover:from-orange-300 hover:to-orange-400 text-white shadow-sm",
+    function: "bg-gradient-to-b from-gray-400 to-gray-500 hover:from-gray-300 hover:to-gray-400 text-gray-800 shadow-sm"
+  };
+
+  const buttonStyle: React.CSSProperties = {
+    boxShadow: '0 2px 4px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.4)',
+    border: '1px solid rgba(0,0,0,0.15)',
+    fontFamily: `'Orbitron', sans-serif`
+  };
   const [display, setDisplay] = useState('0');
   const [transactionType, setTransactionType] = useState<TransactionType>('inflow');
   const [showTransactionForm, setShowTransactionForm] = useState(false);
@@ -258,8 +272,13 @@ export function Calculator() {
     setSelectedItems(items);
   };
 
+  const { t } = useTranslation();
+
   return (
     <div className="h-full flex flex-col">
+      <div className="p-2 flex justify-end">
+        <LanguageToggle />
+      </div>
       <div className="flex flex-col h-full">
         {/* Calculator Display - Reduced by 10% from 40vh to 36vh */}
         <div
@@ -269,10 +288,10 @@ export function Calculator() {
             transactionType === 'inflow' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
           )}
         >
-          <div className="text-sm mb-2">{transactionType === 'inflow' ? 'SALE' : 'PURCHASE'}</div>
-          <div className="text-5xl font-bold text-right break-all">{display}</div>
+          <div className="text-sm mb-2">{transactionType === 'inflow' ? t('sale') : t('purchase')}</div>
+          <div className="text-5xl font-bold text-right break-all" style={{ fontFamily: `'Orbitron', sans-serif` }}>{display}</div>
           {currentOperator && (
-            <div className="text-sm mt-2 text-right opacity-75">
+            <div className="text-sm mt-2 text-right opacity-75" style={{ fontFamily: `'Orbitron', sans-serif` }}>
               {previousValue} {currentOperator}
             </div>
           )}
@@ -281,32 +300,32 @@ export function Calculator() {
         {/* Calculator Buttons - 5x5 Grid */}
         <div className="flex-1 grid grid-cols-5 gap-1 p-4 bg-gray-100">
           {/* Row 1 */}
-          <button onClick={() => handleNumber('7')} className="bg-white rounded-lg shadow hover:bg-gray-50 active:bg-gray-100 text-xl font-medium">7</button>
-          <button onClick={() => handleNumber('8')} className="bg-white rounded-lg shadow hover:bg-gray-50 active:bg-gray-100 text-xl font-medium">8</button>
-          <button onClick={() => handleNumber('9')} className="bg-white rounded-lg shadow hover:bg-gray-50 active:bg-gray-100 text-xl font-medium">9</button>
-          <button onClick={clear} className="bg-red-500 text-white rounded-lg shadow hover:bg-red-600 active:bg-red-700 text-xl font-medium">C</button>
-          <button onClick={clearEntry} className="bg-yellow-500 text-white rounded-lg shadow hover:bg-yellow-600 active:bg-yellow-700 text-xl font-medium">CE</button>
+          <button onClick={() => handleNumber('7')} className={cn('rounded-lg text-xl font-medium', variantClasses.number)} style={buttonStyle}>7</button>
+          <button onClick={() => handleNumber('8')} className={cn('rounded-lg text-xl font-medium', variantClasses.number)} style={buttonStyle}>8</button>
+          <button onClick={() => handleNumber('9')} className={cn('rounded-lg text-xl font-medium', variantClasses.number)} style={buttonStyle}>9</button>
+          <button onClick={clear} className={cn('rounded-lg text-xl font-medium', variantClasses.function)} style={buttonStyle}>C</button>
+          <button onClick={clearEntry} className={cn('rounded-lg text-xl font-medium', variantClasses.function)} style={buttonStyle}>CE</button>
 
           {/* Row 2 */}
-          <button onClick={() => handleNumber('4')} className="bg-white rounded-lg shadow hover:bg-gray-50 active:bg-gray-100 text-xl font-medium">4</button>
-          <button onClick={() => handleNumber('5')} className="bg-white rounded-lg shadow hover:bg-gray-50 active:bg-gray-100 text-xl font-medium">5</button>
-          <button onClick={() => handleNumber('6')} className="bg-white rounded-lg shadow hover:bg-gray-50 active:bg-gray-100 text-xl font-medium">6</button>
-          <button onClick={handlePercentage} className="bg-gray-200 rounded-lg shadow hover:bg-gray-300 active:bg-gray-400 text-xl font-medium">%</button>
-          <button onClick={() => handleOperator('*')} className="bg-gray-200 rounded-lg shadow hover:bg-gray-300 active:bg-gray-400 text-xl font-medium">×</button>
+          <button onClick={() => handleNumber('4')} className={cn('rounded-lg text-xl font-medium', variantClasses.number)} style={buttonStyle}>4</button>
+          <button onClick={() => handleNumber('5')} className={cn('rounded-lg text-xl font-medium', variantClasses.number)} style={buttonStyle}>5</button>
+          <button onClick={() => handleNumber('6')} className={cn('rounded-lg text-xl font-medium', variantClasses.number)} style={buttonStyle}>6</button>
+          <button onClick={handlePercentage} className={cn('rounded-lg text-xl font-medium', variantClasses.function)} style={buttonStyle}>%</button>
+          <button onClick={() => handleOperator('*')} className={cn('rounded-lg text-xl font-medium', variantClasses.operator)} style={buttonStyle}>×</button>
 
           {/* Row 3 */}
-          <button onClick={() => handleNumber('1')} className="bg-white rounded-lg shadow hover:bg-gray-50 active:bg-gray-100 text-xl font-medium">1</button>
-          <button onClick={() => handleNumber('2')} className="bg-white rounded-lg shadow hover:bg-gray-50 active:bg-gray-100 text-xl font-medium">2</button>
-          <button onClick={() => handleNumber('3')} className="bg-white rounded-lg shadow hover:bg-gray-50 active:bg-gray-100 text-xl font-medium">3</button>
-          <button onClick={() => handleOperator('-')} className="bg-gray-200 rounded-lg shadow hover:bg-gray-300 active:bg-gray-400 text-xl font-medium">−</button>
-          <button onClick={() => handleOperator('/')} className="bg-gray-200 rounded-lg shadow hover:bg-gray-300 active:bg-gray-400 text-xl font-medium">÷</button>
+          <button onClick={() => handleNumber('1')} className={cn('rounded-lg text-xl font-medium', variantClasses.number)} style={buttonStyle}>1</button>
+          <button onClick={() => handleNumber('2')} className={cn('rounded-lg text-xl font-medium', variantClasses.number)} style={buttonStyle}>2</button>
+          <button onClick={() => handleNumber('3')} className={cn('rounded-lg text-xl font-medium', variantClasses.number)} style={buttonStyle}>3</button>
+          <button onClick={() => handleOperator('-')} className={cn('rounded-lg text-xl font-medium', variantClasses.operator)} style={buttonStyle}>−</button>
+          <button onClick={() => handleOperator('/')} className={cn('rounded-lg text-xl font-medium', variantClasses.operator)} style={buttonStyle}>÷</button>
 
           {/* Row 4 */}
-          <button onClick={() => handleNumber('0')} className="bg-white rounded-lg shadow hover:bg-gray-50 active:bg-gray-100 text-xl font-medium">0</button>
-          <button onClick={() => handleNumber('00')} className="bg-white rounded-lg shadow hover:bg-gray-50 active:bg-gray-100 text-xl font-medium">00</button>
-          <button onClick={() => handleNumber('.')} className="bg-white rounded-lg shadow hover:bg-gray-50 active:bg-gray-100 text-xl font-medium">.</button>
-          <button onClick={() => handleOperator('+')} className="bg-gray-200 rounded-lg shadow hover:bg-gray-300 active:bg-gray-400 text-xl font-medium">+</button>
-          <button onClick={handleEquals} className="bg-blue-500 text-white rounded-lg shadow hover:bg-blue-600 active:bg-blue-700 text-xl font-medium">=</button>
+          <button onClick={() => handleNumber('0')} className={cn('rounded-lg text-xl font-medium', variantClasses.number)} style={buttonStyle}>0</button>
+          <button onClick={() => handleNumber('00')} className={cn('rounded-lg text-xl font-medium', variantClasses.number)} style={buttonStyle}>00</button>
+          <button onClick={() => handleNumber('.')} className={cn('rounded-lg text-xl font-medium', variantClasses.number)} style={buttonStyle}>.</button>
+          <button onClick={() => handleOperator('+')} className={cn('rounded-lg text-xl font-medium', variantClasses.operator)} style={buttonStyle}>+</button>
+          <button onClick={handleEquals} className={cn('rounded-lg text-xl font-medium', variantClasses.equals)} style={buttonStyle}>=</button>
 
           {/* Row 5 - Submit button (slimmer and extended) */}
           <div className="col-span-5 mt-1">
@@ -314,7 +333,7 @@ export function Calculator() {
               onClick={() => setShowTransactionForm(true)}
               className="w-full bg-green-500 text-white rounded-lg shadow hover:bg-green-600 active:bg-green-700 text-xl font-medium h-10"
             >
-              Submit
+              {t('submit')}
             </button>
           </div>
         </div>
@@ -325,7 +344,7 @@ export function Calculator() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold">Transaction Details</h2>
+              <h2 className="text-xl font-bold">{t('transactionDetails')}</h2>
               <button
                 onClick={() => setShowTransactionForm(false)}
                 className="text-gray-500 hover:text-gray-700"
@@ -337,16 +356,16 @@ export function Calculator() {
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700">
-                  Transaction Type
+                  {t('transactionType')}
                 </label>
                 <div className="mt-1 text-lg font-semibold">
-                  {transactionType.toUpperCase()}
+                  {transactionType === 'inflow' ? t('sale') : t('purchase')}
                 </div>
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700">
-                  Amount
+                  {t('amount')}
                 </label>
                 <div className="mt-1 text-lg font-semibold">
                   {formatCurrency(parseFloat(display))}
@@ -355,7 +374,7 @@ export function Calculator() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700">
-                  Paid Amount
+                  {t('paidAmount')}
                 </label>
                 <input
                   type="number"
@@ -367,7 +386,7 @@ export function Calculator() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700">
-                  Due Amount
+                  {t('dueAmount')}
                 </label>
                 <div className="mt-1 text-lg font-semibold">
                   {formatCurrency(parseFloat(display) - (parseFloat(paidAmount) || 0))}
@@ -376,7 +395,7 @@ export function Calculator() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700">
-                  {transactionType === 'inflow' ? 'Customer' : 'Supplier'}
+                  {transactionType === 'inflow' ? t('customer') : t('supplier')}
                 </label>
                 <div className="mt-1 flex gap-2">
                   <select
@@ -387,7 +406,7 @@ export function Calculator() {
                     }}
                     className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                   >
-                    <option value="">Select...</option>
+                    <option value="">{t('select')}</option>
                     {contacts.map(contact => (
                       <option key={contact.id} value={contact.id}>
                         {contact.name}
@@ -407,7 +426,7 @@ export function Calculator() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700">
-                  Attachment (Optional)
+                  {t('attachmentOptional')}
                 </label>
                 <div className="mt-1 flex items-center gap-4">
                   <label className="flex-1 cursor-pointer">
@@ -418,10 +437,10 @@ export function Calculator() {
                         <div className="text-center">
                           <Upload className="mx-auto h-12 w-12 text-gray-400" />
                           <span className="mt-2 block text-sm font-medium text-gray-600">
-                            Click to upload or capture image (max 5MB)
+                            {t('clickToUpload')}
                           </span>
                           <span className="mt-1 text-xs text-gray-500">
-                            Supports: JPG, PNG, GIF, WebP
+                            {t('supports')}
                           </span>
                         </div>
                       )}
@@ -457,7 +476,7 @@ export function Calculator() {
                 disabled={loading}
                 className="w-full bg-green-500 text-white py-2 px-4 rounded-md hover:bg-green-600 disabled:opacity-50"
               >
-                {loading ? 'Processing...' : 'Submit Transaction'}
+                {loading ? t('processing') : t('submitTransaction')}
               </button>
             </div>
           </div>
@@ -469,7 +488,7 @@ export function Calculator() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-lg p-6 w-full max-w-md">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold">New {transactionType === 'inflow' ? 'Customer' : 'Supplier'}</h2>
+              <h2 className="text-xl font-bold">{transactionType === 'inflow' ? t('newCustomer') : t('newSupplier')}</h2>
               <button
                 onClick={() => setShowNewContactForm(false)}
                 className="text-gray-500 hover:text-gray-700"
@@ -481,7 +500,7 @@ export function Calculator() {
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700">
-                  Name *
+                  {t('nameRequired') ?? 'Name *'}
                 </label>
                 <input
                   type="text"
@@ -493,7 +512,7 @@ export function Calculator() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700">
-                  Phone *
+                  {t('phoneRequired') ?? 'Phone *'}
                 </label>
                 <input
                   type="tel"
@@ -505,7 +524,7 @@ export function Calculator() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700">
-                  NID (Optional)
+                  {t('nidOptional') ?? 'NID (Optional)'}
                 </label>
                 <input
                   type="text"
@@ -524,7 +543,7 @@ export function Calculator() {
                 disabled={loading}
                 className="w-full bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 disabled:opacity-50"
               >
-                {loading ? 'Creating...' : 'Create Contact'}
+                {loading ? t('creating') : t('createContact')}
               </button>
             </div>
           </div>

@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>BizCalc Onboard</title>
+    <style>
+      body{font-family:system-ui,Segoe UI,Arial;background:#f6f7fb;padding:20px}
+      form{max-width:640px;background:#fff;padding:20px;border-radius:6px;box-shadow:0 2px 8px rgba(0,0,0,0.08)}
+      label{display:block;margin-top:12px}
+      input{width:100%;padding:8px;margin-top:6px}
+      button{margin-top:14px;padding:10px 14px}
+    </style>
+  </head>
+  <body>
+    <h1>Onboard a new client</h1>
+    <form method="post" action="/create">
+      <label>Client short name (alpha, digits, hyphen)
+        <input name="client" required pattern="[A-Za-z0-9\-]+" />
+      </label>
+      <label>Subdomain (e.g. client.example.com)
+        <input name="subdomain" required />
+      </label>
+      <label>Optional port (leave empty to auto-assign)</label>
+      <input name="port" type="number" min="2001" max="65535" />
+      <button type="submit">Create client</button>
+    </form>
+  </body>
+</html>

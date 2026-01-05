@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from '../i18n';
 import { getInventoryItems } from '../lib/api';
 import type { InventoryItem } from '../lib/types';
 
 export default function InventoryClean(): JSX.Element {
+  const { t } = useTranslation();
   const [items, setItems] = useState<InventoryItem[]>([]);
 
   useEffect(() => {
@@ -15,15 +17,15 @@ export default function InventoryClean(): JSX.Element {
 
   return (
     <div className="p-4">
-      <h2 className="text-lg font-semibold mb-4">Inventory (Clean)</h2>
+      <h2 className="text-lg font-semibold mb-4">{t('inventory.title')}</h2>
       {items.length === 0 ? (
-        <div className="text-sm text-gray-500">No items found.</div>
+        <div className="text-sm text-gray-500">{t('inventory.noItems')}</div>
       ) : (
         <ul className="space-y-2">
           {items.map((it) => (
             <li key={it.id} className="p-2 border rounded bg-white">
               <div className="font-medium">{it.name || it.sku || it.id}</div>
-              <div className="text-sm text-gray-500">Qty: {it.quantity}</div>
+              <div className="text-sm text-gray-500">{t('inventory.qty')} {it.quantity}</div>
             </li>
           ))}
         </ul>
