@@ -1,4 +1,4 @@
-const PB_URL = import.meta.env.VITE_PB_URL || import.meta.env.VITE_API_URL || 'http://localhost:3000';
+const PB_URL = import.meta.env.VITE_PB_URL || import.meta.env.VITE_API_URL || '';
 
 async function fetchJson(path: string, options: RequestInit = {}) {
   const res = await fetch(`${PB_URL}${path}`, options);
