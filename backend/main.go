@@ -107,14 +107,14 @@ func main() {
 	// collection style endpoints to match adapter paths
 	api := app.Group("/api/collections")
 
-	api.Get(":collection/records", handleList)
-	api.Get(":collection/records/:id", handleGet)
-	api.Post(":collection/records", handleCreate)
-	authPatch := api.Patch(":collection/records/:id", handlePatch)
+	api.Get("/:collection/records", handleList)
+	api.Get("/:collection/records/:id", handleGet)
+	api.Post("/:collection/records", handleCreate)
+	authPatch := api.Patch("/:collection/records/:id", handlePatch)
 	_ = authPatch
 
 	// file upload to record
-	api.Post(":collection/records/:id/files/:field", handleUploadFile)
+	api.Post("/:collection/records/:id/files/:field", handleUploadFile)
 
 	// simple listing endpoints for compatibility
 	app.Get("/api/health", func(c *fiber.Ctx) error { return c.JSON(fiber.Map{"ok": true}) })
