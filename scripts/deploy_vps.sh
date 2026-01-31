@@ -49,6 +49,7 @@ if [ -f package-lock.json ]; then
 else
   npm install --no-audit --no-fund
 fi
+export VITE_API_URL=""
 npm run build
 
 echo "Copying frontend build to $APP_DIR/frontend/dist"
