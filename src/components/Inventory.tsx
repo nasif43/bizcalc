@@ -508,9 +508,9 @@ export function Inventory() {
   // Render functions
   const renderInventoryList = () => {
     return (
-      <div className="flex flex-col h-full">
+      <div className="flex flex-col h-screen overflow-hidden">
         {/* Header with actions */}
-        <div className="bg-white p-4 shadow flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div className="bg-white p-4 shadow flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 flex-shrink-0">
           <div className="flex items-center">
             <h1 className="text-xl font-bold">Inventory Management</h1>
             <div className="ml-4 flex items-center">
@@ -593,7 +593,7 @@ export function Inventory() {
         
         {/* Notification */}
         {notification && (
-          <div className={`p-3 ${notification.type === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'} flex items-center justify-between`}>
+          <div className={`p-3 flex-shrink-0 ${notification.type === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'} flex items-center justify-between`}>
             <div className="flex items-center">
               {notification.type === 'success' ? <Check size={18} className="mr-2" /> : <AlertTriangle size={18} className="mr-2" />}
               {notification.message}
@@ -605,31 +605,31 @@ export function Inventory() {
         )}
         
         {/* Table */}
-        <div className="flex-1 overflow-auto">
+        <div className="flex-1 overflow-auto min-h-0">
           {loading && items.length === 0 ? (
             <div className="flex items-center justify-center h-full">
               <Loader size={24} className="animate-spin mr-2" />
               <span>Loading inventory...</span>
             </div>
           ) : filteredItems.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-full text-gray-500">
+            <div className="flex flex-col items-center justify-center h-full text-gray-500 p-4">
               <Package size={48} className="mb-4" />
               {search || categoryFilter !== 'all' || stockFilter !== 'all' ? (
-                <p>No items match your search criteria</p>
+                <p className="text-center">No items match your search criteria</p>
               ) : (
                 <>
-                  <p className="text-xl mb-2">No inventory items found</p>
-                  <p>Click "Add Item" to create your first inventory item</p>
+                  <p className="text-xl mb-2 text-center">No inventory items found</p>
+                  <p className="text-center">Click "Add Item" to create your first inventory item</p>
                 </>
               )}
             </div>
           ) : (
-            <div className="min-w-full bg-white">
+            <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50 sticky top-0 z-10">
                   <tr>
                     <th 
-                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                      className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
                       onClick={() => handleSort('name')}
                     >
                       <div className="flex items-center">
@@ -640,7 +640,7 @@ export function Inventory() {
                       </div>
                     </th>
                     <th 
-                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                      className="hidden sm:table-cell px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
                       onClick={() => handleSort('sku')}
                     >
                       <div className="flex items-center">
@@ -651,29 +651,29 @@ export function Inventory() {
                       </div>
                     </th>
                     <th 
-                      className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                      className="px-3 sm:px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
                       onClick={() => handleSort('quantity')}
                     >
                       <div className="flex items-center justify-end">
-                        Quantity
+                        Qty
                         {sortField === 'quantity' && (
                           <ArrowUpDown size={14} className="ml-1" />
                         )}
                       </div>
                     </th>
                     <th 
-                      className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                      className="hidden md:table-cell px-3 sm:px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
                       onClick={() => handleSort('unit_price')}
                     >
                       <div className="flex items-center justify-end">
-                        Unit Price
+                        Price
                         {sortField === 'unit_price' && (
                           <ArrowUpDown size={14} className="ml-1" />
                         )}
                       </div>
                     </th>
                     <th 
-                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                      className="hidden lg:table-cell px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
                       onClick={() => handleSort('category')}
                     >
                       <div className="flex items-center">
@@ -684,17 +684,17 @@ export function Inventory() {
                       </div>
                     </th>
                     <th 
-                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                      className="hidden xl:table-cell px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
                       onClick={() => handleSort('updated_at')}
                     >
                       <div className="flex items-center">
-                        Last Updated
+                        Updated
                         {sortField === 'updated_at' && (
                           <ArrowUpDown size={14} className="ml-1" />
                         )}
                       </div>
                     </th>
-                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-3 sm:px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Actions
                     </th>
                   </tr>
@@ -702,26 +702,26 @@ export function Inventory() {
                 <tbody className="bg-white divide-y divide-gray-200">
                   {paginatedItems.map((item) => (
                     <tr key={item.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-3 sm:px-6 py-4">
                         <div className="flex items-center">
                           {item.image_url ? (
                             <img 
                               src={item.image_url} 
                               alt={item.name} 
-                              className="h-10 w-10 rounded-full object-cover mr-3"
+                              className="h-8 w-8 sm:h-10 sm:w-10 rounded-full object-cover mr-2 sm:mr-3 flex-shrink-0"
                             />
                           ) : (
-                            <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center mr-3">
-                              <Package size={20} className="text-gray-500" />
+                            <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-full bg-gray-200 flex items-center justify-center mr-2 sm:mr-3 flex-shrink-0">
+                              <Package size={16} className="sm:w-5 sm:h-5 text-gray-500" />
                             </div>
                           )}
-                          <div className="font-medium text-gray-900">{item.name}</div>
+                          <div className="font-medium text-gray-900 text-sm truncate">{item.name}</div>
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <td className="hidden sm:table-cell px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         {item.sku}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-right font-medium">
+                      <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-right font-medium">
                         <span className={
                           item.quantity === 0 ? 'text-red-600' :
                           item.quantity <= item.reorder_level ? 'text-yellow-600' :
@@ -730,27 +730,27 @@ export function Inventory() {
                           {item.quantity}
                         </span>
                         {item.quantity <= item.reorder_level && item.quantity > 0 && (
-                          <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800">
+                          <span className="ml-1 sm:ml-2 inline-flex items-center px-1 sm:px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800">
                             Low
                           </span>
                         )}
                         {item.quantity === 0 && (
-                          <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800">
+                          <span className="ml-1 sm:ml-2 inline-flex items-center px-1 sm:px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800">
                             Out
                           </span>
                         )}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-right">
+                      <td className="hidden md:table-cell px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-right">
                         {formatCurrency(item.unit_price)}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <td className="hidden lg:table-cell px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         {item.category || '-'}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <td className="hidden xl:table-cell px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         {new Date(item.updated_at).toLocaleString()}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
-                        <div className="flex items-center justify-center space-x-2">
+                      <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
+                        <div className="flex items-center justify-center space-x-1 sm:space-x-2">
                           <button
                             onClick={() => {
                               setAdjustmentItem(item);
@@ -789,12 +789,12 @@ export function Inventory() {
         
         {/* Pagination */}
         {filteredItems.length > 0 && (
-          <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
+          <div className="bg-white px-3 sm:px-4 py-3 flex items-center justify-between border-t border-gray-200 flex-shrink-0">
             <div className="flex-1 flex justify-between sm:hidden">
               <button
                 onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
                 disabled={currentPage === 1}
-                className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
+                className="relative inline-flex items-center px-3 py-2 border border-gray-300 text-xs font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
               >
                 Previous
               </button>

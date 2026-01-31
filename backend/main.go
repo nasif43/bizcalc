@@ -65,13 +65,16 @@ func seedIfEmpty() {
 	var idItem string
 	if itemCnt == 0 {
 		idItem = genID()
-		_, _ = db.Exec(`INSERT INTO inventory_items (id,name,sku,quantity,unit_price,reorder_level,category,description,created_at) VALUES (?,?,?,?,?,?,?,?,?)`, idItem, "Sample Item", "SAMPLE1", 10, 9.99, 2, "General", "Seeded item", time.Now().Format(time.RFC3339))
+		now := time.Now().Format(time.RFC3339)
+		_, _ = db.Exec(`INSERT INTO inventory_items (id,name,sku,quantity,unit_price,reorder_level,category,description,updated_at,created_at) VALUES (?,?,?,?,?,?,?,?,?,?)`, idItem, "Sample Item", "SAMPLE1", 10, 9.99, 2, "General", "Seeded item", now, now)
 		_, _ = db.Exec(`INSERT INTO inventory_transactions (id,item_id,quantity_change,previous_quantity,new_quantity,transaction_type,notes,created_at) VALUES (?,?,?,?,?,?,?,?)`, genID(), idItem, 10, 0, 10, "initial", "Seeded", time.Now().Format(time.RFC3339))
 	} else {
 		// get existing item
 		_ = db.QueryRow(`SELECT id FROM inventory_items LIMIT 1`).Scan(&idItem)
 		// Fix any items with blank names
 		_, _ = db.Exec(`UPDATE inventory_items SET name = 'Unnamed Item' WHERE name IS NULL OR name = ''`)
+		// Backfill updated_at for existing items
+		_, _ = db.Exec(`UPDATE inventory_items SET updated_at = created_at WHERE updated_at IS NULL OR updated_at = ''`)
 	}
 
 	// check transactions
@@ -290,7 +293,8 @@ func handleCreate(c *fiber.Ctx) error {
 		}
 		return c.JSON(fiber.Map{"id": id})
 	case "inventory_items":
-		_, err := db.Exec(`INSERT INTO inventory_items (id,name,sku,quantity,unit_price,reorder_level,category,description,created_at) VALUES (?,?,?,?,?,?,?,?,?)`, id, body["name"], body["sku"], body["quantity"], body["unit_price"], body["reorder_level"], body["category"], body["description"], time.Now().Format(time.RFC3339))
+		now := time.Now().Format(time.RFC3339)
+		_, err := db.Exec(`INSERT INTO inventory_items (id,name,sku,quantity,unit_price,reorder_level,category,description,updated_at,created_at) VALUES (?,?,?,?,?,?,?,?,?,?)`, id, body["name"], body["sku"], body["quantity"], body["unit_price"], body["reorder_level"], body["category"], body["description"], now, now)
 		if err != nil {
 			return c.Status(500).JSON(fiber.Map{"error": err.Error()})
 		}
@@ -321,7 +325,7 @@ func handleCreate(c *fiber.Ctx) error {
 				} else {
 					newQty = currentQty + int(quantity)
 				}
-				_, _ = db.Exec(`UPDATE inventory_items SET quantity = ? WHERE id = ?`, newQty, itemId)
+				_, _ = db.Exec(`UPDATE inventory_items SET quantity = ?, updated_at = ? WHERE id = ?`, newQty, time.Now().Format(time.RFC3339), itemId)
 				// create inventory_transaction
 				quantityChange := int(quantity)
 				if body["type"] == "inflow" {
@@ -352,11 +356,17 @@ func handlePatch(c *fiber.Ctx) error {
 	switch collection {
 	case "inventory_items":
 		// simple update of provided fields
+		updated := false
 		if name, ok := body["name"]; ok {
 			_, _ = db.Exec("UPDATE inventory_items SET name = ? WHERE id = ?", name, id)
+			updated = true
 		}
 		if q, ok := body["quantity"]; ok {
 			_, _ = db.Exec("UPDATE inventory_items SET quantity = ? WHERE id = ?", q, id)
+			updated = true
+		}
+		if updated {
+			_, _ = db.Exec("UPDATE inventory_items SET updated_at = ? WHERE id = ?", time.Now().Format(time.RFC3339), id)
 		}
 		return c.JSON(fiber.Map{"id": id})
 	case "transactions":
