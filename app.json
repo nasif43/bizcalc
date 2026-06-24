@@ -1,0 +1,17 @@
+{
+  "name": "BizCalc",
+  "description": "Business Calculator - Accounting & Inventory Demo",
+  "env": {
+    "VITE_API_URL": {
+      "description": "API URL (leave empty for same-origin on Heroku)",
+      "value": "",
+      "required": false
+    }
+  },
+  "buildpacks": [
+    { "url": "heroku/nodejs" },
+    { "url": "heroku/go" }
+  ],
+  "repository": "https://github.com/anomalyco/bizcalc",
+  "keywords": ["react", "go", "fiber", "accounting", "inventory"]
+}

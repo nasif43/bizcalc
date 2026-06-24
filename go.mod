@@ -1,4 +1,4 @@
-module bizcalc-backend
+module bizcalc
 
 go 1.20
 

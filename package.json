@@ -3,12 +3,16 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "pb:setup": "node scripts/setup_pocketbase.js"
+    "pb:setup": "node scripts/setup_pocketbase.js",
+    "heroku-postbuild": "npm run build"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.39.7",

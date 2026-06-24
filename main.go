@@ -2,10 +2,13 @@ package main
 
 import (
 	"database/sql"
+	"embed"
 	"encoding/json"
 	"fmt"
 	"io"
+	"io/fs"
 	"log"
+	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
@@ -13,10 +16,17 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
+	"github.com/gofiber/fiber/v2/middleware/filesystem"
 	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/google/uuid"
 	_ "modernc.org/sqlite"
 )
+
+//go:embed dist/*
+var distFS embed.FS
+
+//go:embed migrate.sql
+var migrateSQL string
 
 var db *sql.DB
 
@@ -32,10 +42,7 @@ func initDB(path string) *sql.DB {
 	}
 	db, err := sql.Open("sqlite", path)
 	must(err)
-	// run migrations
-	migration, err := os.ReadFile("migrate.sql")
-	must(err)
-	_, err = db.Exec(string(migration))
+	_, err = db.Exec(migrateSQL)
 	must(err)
 	return db
 }
@@ -45,7 +52,6 @@ func seedIfEmpty() {
 	var cnt int
 	err := db.QueryRow(`SELECT COUNT(1) FROM contacts`).Scan(&cnt)
 	if err != nil {
-		// assume table missing or empty; ignore
 		return
 	}
 
@@ -54,11 +60,9 @@ func seedIfEmpty() {
 		idContact = genID()
 		_, _ = db.Exec(`INSERT INTO contacts (id,name,phone,type) VALUES (?,?,?,?)`, idContact, "Test Customer", "+1234567890", "customer")
 	} else {
-		// get existing contact
 		_ = db.QueryRow(`SELECT id FROM contacts LIMIT 1`).Scan(&idContact)
 	}
 
-	// check inventory_items
 	var itemCnt int
 	_ = db.QueryRow(`SELECT COUNT(1) FROM inventory_items`).Scan(&itemCnt)
 
@@ -69,15 +73,11 @@ func seedIfEmpty() {
 		_, _ = db.Exec(`INSERT INTO inventory_items (id,name,sku,quantity,unit_price,reorder_level,category,description,updated_at,created_at) VALUES (?,?,?,?,?,?,?,?,?,?)`, idItem, "Sample Item", "SAMPLE1", 10, 9.99, 2, "General", "Seeded item", now, now)
 		_, _ = db.Exec(`INSERT INTO inventory_transactions (id,item_id,quantity_change,previous_quantity,new_quantity,transaction_type,notes,created_at) VALUES (?,?,?,?,?,?,?,?)`, genID(), idItem, 10, 0, 10, "initial", "Seeded", time.Now().Format(time.RFC3339))
 	} else {
-		// get existing item
 		_ = db.QueryRow(`SELECT id FROM inventory_items LIMIT 1`).Scan(&idItem)
-		// Fix any items with blank names
 		_, _ = db.Exec(`UPDATE inventory_items SET name = 'Unnamed Item' WHERE name IS NULL OR name = ''`)
-		// Backfill updated_at for existing items
 		_, _ = db.Exec(`UPDATE inventory_items SET updated_at = created_at WHERE updated_at IS NULL OR updated_at = ''`)
 	}
 
-	// check transactions
 	var transCnt int
 	_ = db.QueryRow(`SELECT COUNT(1) FROM transactions`).Scan(&transCnt)
 
@@ -119,6 +119,31 @@ func main() {
 	// simple listing endpoints for compatibility
 	app.Get("/api/health", func(c *fiber.Ctx) error { return c.JSON(fiber.Map{"ok": true}) })
 
+	// serve embedded frontend
+	subFS, err := fs.Sub(distFS, "dist")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// static files from embedded frontend build
+	app.Use("/", filesystem.New(filesystem.Config{
+		Root:   http.FS(subFS),
+		Browse: false,
+	}))
+
+	// SPA fallback: serve index.html for any unmatched non-API path
+	app.Use(func(c *fiber.Ctx) error {
+		if strings.HasPrefix(c.Path(), "/api") {
+			return c.Next()
+		}
+		indexData, err := distFS.ReadFile("dist/index.html")
+		if err != nil {
+			return c.Status(500).SendString("Frontend not built. Run 'npm run build' first.")
+		}
+		c.Set("Content-Type", "text/html; charset=utf-8")
+		return c.Status(200).Send(indexData)
+	})
+
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "3000"
@@ -131,7 +156,6 @@ func main() {
 
 func handleList(c *fiber.Ctx) error {
 	collection := c.Params("collection")
-	// support query params: perPage, filter (very basic), sort, expand
 	queryFilter := c.Query("filter")
 	expand := c.Query("expand")
 	sqlQuery := ""
@@ -152,8 +176,6 @@ func handleList(c *fiber.Ctx) error {
 		return c.Status(404).JSON(fiber.Map{"error": "unknown collection"})
 	}
 	if queryFilter != "" {
-		// very naive: assume simple form like field="value" or field = "value"
-		// we will remove any double quotes and use LIKE
 		sqlQuery = sqlQuery + " WHERE " + queryFilter
 	}
 	sort := c.Query("sort")
@@ -189,7 +211,6 @@ func handleList(c *fiber.Ctx) error {
 				m[col] = v
 			}
 		}
-		// handle expand
 		if collection == "transactions" && strings.Contains(expand, "contact") {
 			m["contact"] = map[string]interface{}{
 				"id":              m["contact__id"],
@@ -199,7 +220,6 @@ func handleList(c *fiber.Ctx) error {
 				"type":            m["contact__type"],
 				"organization_id": m["contact__organization_id"],
 			}
-			// remove the prefixed fields
 			delete(m, "contact__id")
 			delete(m, "contact__name")
 			delete(m, "contact__phone")
@@ -239,7 +259,6 @@ func handleList(c *fiber.Ctx) error {
 func handleGet(c *fiber.Ctx) error {
 	collection := c.Params("collection")
 	id := c.Params("id")
-	// handle GET by id for supported collections
 	switch collection {
 	case "contacts":
 		var idVal, name, phone, nid, typ, org sql.NullString
@@ -304,7 +323,6 @@ func handleCreate(c *fiber.Ctx) error {
 		if err != nil {
 			return c.Status(500).JSON(fiber.Map{"error": err.Error()})
 		}
-		// handle items
 		if items, ok := body["items"].([]interface{}); ok {
 			for _, item := range items {
 				itemMap, ok := item.(map[string]interface{})
@@ -316,7 +334,6 @@ func handleCreate(c *fiber.Ctx) error {
 				unitPrice, _ := itemMap["unit_price"].(float64)
 				totalPrice := quantity * unitPrice
 				_, _ = db.Exec(`INSERT INTO transaction_items (id,transaction_id,item_id,quantity,unit_price,total_price) VALUES (?,?,?,?,?,?)`, genID(), id, itemId, int(quantity), unitPrice, totalPrice)
-				// update inventory
 				var currentQty int
 				_ = db.QueryRow(`SELECT quantity FROM inventory_items WHERE id = ?`, itemId).Scan(&currentQty)
 				var newQty int
@@ -326,7 +343,6 @@ func handleCreate(c *fiber.Ctx) error {
 					newQty = currentQty + int(quantity)
 				}
 				_, _ = db.Exec(`UPDATE inventory_items SET quantity = ?, updated_at = ? WHERE id = ?`, newQty, time.Now().Format(time.RFC3339), itemId)
-				// create inventory_transaction
 				quantityChange := int(quantity)
 				if body["type"] == "inflow" {
 					quantityChange = -quantityChange
@@ -355,7 +371,6 @@ func handlePatch(c *fiber.Ctx) error {
 	}
 	switch collection {
 	case "inventory_items":
-		// simple update of provided fields
 		updated := false
 		if name, ok := body["name"]; ok {
 			_, _ = db.Exec("UPDATE inventory_items SET name = ? WHERE id = ?", name, id)
@@ -370,7 +385,6 @@ func handlePatch(c *fiber.Ctx) error {
 		}
 		return c.JSON(fiber.Map{"id": id})
 	case "transactions":
-		// update image_url if provided
 		if imageUrl, ok := body["image_url"]; ok {
 			_, _ = db.Exec("UPDATE transactions SET image_url = ? WHERE id = ?", imageUrl, id)
 		}
@@ -406,7 +420,6 @@ func handleUploadFile(c *fiber.Ctx) error {
 		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
 	}
 	url := fmt.Sprintf("/api/files/%s/%s/%s", collection, id, file.Filename)
-	// update record to store file info
 	if collection == "inventory_items" {
 		_, _ = db.Exec("UPDATE inventory_items SET image_filename = ?, image_url = ? WHERE id = ?", file.Filename, url, id)
 	} else if collection == "transactions" {
